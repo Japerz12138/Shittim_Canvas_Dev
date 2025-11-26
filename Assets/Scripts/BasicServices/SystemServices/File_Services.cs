@@ -174,11 +174,19 @@ public class File_Services : MonoBehaviour
         return JsonConvert.DeserializeObject<T>(json, settings );
     }
 
+    private static void AtomicWriteAllText(string file_path, string contents)
+    {
+        string temp_path = file_path + ".tmp";
+        File.WriteAllText(temp_path, contents);
+        if (File.Exists(file_path)) File.Delete(file_path);
+        File.Move(temp_path, file_path);
+    }
+
     public static void Save_Default_Type_To_File<T>(string file_path) where T : new()
     {
         T config = new T();
         string json = JsonConvert.SerializeObject(config, Formatting.Indented);
-        File.WriteAllText(file_path, json);
+        AtomicWriteAllText(file_path, json);
 
         Debug.Log($"已创建 {typeof(T).Name} 类型的默认文件: {file_path}");
     }
@@ -186,7 +194,7 @@ public class File_Services : MonoBehaviour
     public static void Save_Specific_Type_To_File<T>(T config, string file_path)
     {
         string json = JsonConvert.SerializeObject(config, Formatting.Indented);
-        File.WriteAllText(file_path, json);
+        AtomicWriteAllText(file_path, json);
 
         Debug.Log($"已写入 {typeof(T).Name} 类型的文件: {file_path}");
     }
