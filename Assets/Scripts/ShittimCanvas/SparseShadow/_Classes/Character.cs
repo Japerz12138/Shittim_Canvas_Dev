@@ -23,6 +23,8 @@ using UnityEditor.Recorder;
 public class SpecialSpineBoneConfig
 {
     public string BreastName;
+    public string X;
+    public string Y;
 }
 
 [System.Serializable]
@@ -724,7 +726,7 @@ public class Character : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         Console_Log("角色已进入Idle状态，开始创建动态IK");
 
-        List<string> dynamic_bone_names = new List<string>();
+        Dictionary<string, SpecialSpineBoneConfig> bone_configs = new Dictionary<string, SpecialSpineBoneConfig>();
         
         string specialSpineConfigPath = Path.Combine(File_Services.Student_Lists_Folder_Path, "SpecialSpine.json");
         if (File.Exists(specialSpineConfigPath))
@@ -741,10 +743,10 @@ public class Character : MonoBehaviour
                     {
                         if (!string.IsNullOrEmpty(boneConfig.BreastName))
                         {
-                            dynamic_bone_names.Add(boneConfig.BreastName);
+                            bone_configs[boneConfig.BreastName] = boneConfig;
                         }
                     }
-                    Console_Log($"从配置文件读取到 {dynamic_bone_names.Count} 个动态Bone配置");
+                    Console_Log($"从配置文件读取到 {bone_configs.Count} 个动态Bone配置");
                 }
                 else
                 {
@@ -761,14 +763,16 @@ public class Character : MonoBehaviour
             Console_Log($"SpecialSpine.json 不存在: {specialSpineConfigPath}", Debug_Services.LogLevel.Debug);
         }
 
-        if (dynamic_bone_names.Count == 0)
+        if (bone_configs.Count == 0)
         {
             Console_Log("没有需要创建的动态Bone IK");
             yield break;
         }
 
-        foreach (string bone_name in dynamic_bone_names)
+        foreach (var kvp in bone_configs)
         {
+            string bone_name = kvp.Key;
+            SpecialSpineBoneConfig boneConfig = kvp.Value;
             Bone bone = skeleton_animation.skeleton.FindBone(bone_name);
             if (bone == null)
             {
@@ -795,8 +799,20 @@ public class Character : MonoBehaviour
             SpineCharacter spine_character = lobby_gameobject_instantiated.GetComponent<UILobbyContainer>().SpineCharacter;
 
             GameObject ik_gameobject = new GameObject($"{bone_name}_IK");
-            ik_gameobject.transform.SetParent(spine_character.gameObject.transform);
-            ik_gameobject.transform.position = bone_transform.position;
+            ik_gameobject.transform.SetParent(spine_character.gameObject.transform, false);
+            
+            float customX, customY;
+            bool hasX = float.TryParse(boneConfig.X, out customX);
+            bool hasY = float.TryParse(boneConfig.Y, out customY);
+            bool hasCustomPos = hasX && hasY;
+            if (hasCustomPos)
+            {
+                ik_gameobject.transform.localPosition = new Vector3(customX, customY, bone_transform.localPosition.z);
+            }
+            else
+            {
+                ik_gameobject.transform.position = bone_transform.position;
+            }
             ik_gameobject.transform.rotation = bone_transform.rotation;
             ik_gameobject.transform.localScale = Vector3.one;
             
