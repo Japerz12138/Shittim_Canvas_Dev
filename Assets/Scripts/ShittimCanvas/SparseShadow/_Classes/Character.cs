@@ -33,6 +33,61 @@ public class SpecialSpineConfig
     public Dictionary<string, List<SpecialSpineBoneConfig>> Characters;
 }
 
+public static class SpecialSpine_Config
+{
+    static HashSet<string> characterNames;
+    static bool isLoaded;
+
+    public static bool HasSpecialSpine(string characterName)
+    {
+        if (string.IsNullOrEmpty(characterName)) return false;
+        EnsureLoaded();
+        return characterNames.Contains(characterName);
+    }
+
+    public static void Reload()
+    {
+        isLoaded = false;
+        characterNames = null;
+        EnsureLoaded();
+    }
+
+    static void EnsureLoaded()
+    {
+        if (isLoaded) return;
+        isLoaded = true;
+        characterNames = new HashSet<string>();
+
+        string specialSpineConfigPath = Path.Combine(File_Services.Student_Lists_Folder_Path, "SpecialSpine.json");
+        if (!File.Exists(specialSpineConfigPath)) return;
+
+        try
+        {
+            string jsonText = File.ReadAllText(specialSpineConfigPath);
+            Dictionary<string, List<SpecialSpineBoneConfig>> config =
+                JsonConvert.DeserializeObject<Dictionary<string, List<SpecialSpineBoneConfig>>>(jsonText);
+            if (config == null) return;
+
+            foreach (var kvp in config)
+            {
+                if (kvp.Value == null) continue;
+                foreach (var boneConfig in kvp.Value)
+                {
+                    if (!string.IsNullOrEmpty(boneConfig.BreastName))
+                    {
+                        characterNames.Add(kvp.Key);
+                        break;
+                    }
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[SpecialSpine_Config] 读取 SpecialSpine.json 失败: {ex.Message}");
+        }
+    }
+}
+
 public class Character : MonoBehaviour
 {
     public static string Character_Name;

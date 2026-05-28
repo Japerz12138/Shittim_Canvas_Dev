@@ -128,6 +128,7 @@ public class CharacterList_Services : MonoBehaviour
 
         string json = File.ReadAllText(Path.Combine(File_Services.Student_Lists_Folder_Path, "CharacterList.json"));
         Character_List = JsonConvert.DeserializeObject<Dictionary<long, List<Character>>>(json);
+        SpecialSpine_Config.Reload();
         // 保存原始顺序
         Original_Character_List = new Dictionary<long, List<Character>>(Character_List);
 
@@ -985,6 +986,13 @@ public class CharacterList_Services : MonoBehaviour
             
             UpdateTimerText(character_card_gameobject, character.First().DevName);
             cardToCharacterName[character_card_gameobject] = character.First().DevName;
+
+            Transform special_spine_transform = character_card_gameobject.transform.Find("[Character List] Special Spine");
+            if (special_spine_transform != null)
+            {
+                special_spine_transform.gameObject.SetActive(
+                    SpecialSpine_Config.HasSpecialSpine(character.First().DevName));
+            }
         }
 
         // 调整内容区域大小 - 基于当前页面实际显示的数量计算
